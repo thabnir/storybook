@@ -60,7 +60,7 @@ class DND:
             # alternatively, we could just ignore the extra users
         self.client = OpenAI()
 
-        self.available_functions = {"set_character_health": self.set_character_health}
+        self.available_functions = {"set_character_health": self.deal_damage}
         self.character_1_name = self.users[0][0]
         self.character_1_class = self.users[0][1]
         self.character_1_health = 100
@@ -71,15 +71,15 @@ class DND:
         self.messages = [
             {
                 "role": "system",
-                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate. Keep track of their status with the function `set_character_health`.",
+                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate. Keep track of their status with the function `deal_damage`.",
             },
         ]
         self.tools = [
             {
                 "type": "function",
                 "function": {
-                    "name": "set_character_health",
-                    "description": "Set the health of character `name` to the specified integer value. Max is 100",
+                    "name": "deal_damage",
+                    "description": "Deal the specified integer damage value to character `name.` Max health is 100",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -87,12 +87,12 @@ class DND:
                                 "type": "string",  # TODO: check if this should be an ID instead of a name. Tests needed
                                 "description": "The name of the character whose health value is being updated",
                             },
-                            "new_health": {
+                            "damage_amount": {
                                 "type": "integer",
-                                "description": "The updated health value of the character",
+                                "description": "The amount the character's health is being decreased by. Negative values will increase the character's health.",
                             },
                         },
-                        "required": ["name", "new_health"],
+                        "required": ["name", "damage_amount"],
                     },
                 },
             },
@@ -105,7 +105,7 @@ class DND:
         if top_response.content is not None:
             image_response = self.generate_image(top_response.content) # todo maybe move this to make it faster
             intro_content = {
-                "role": "narrator",
+                "name": "narrator",
                 "content": top_response.content,
                 "base64_image": image_response,
             }
@@ -166,14 +166,14 @@ class DND:
             else:
                 print("Failed to generate a more PG prompt, giving up")
 
-    def set_character_health(self, name: str, new_health: int):
+    def deal_damage(self, name: str, damage_amount: int):
         if name == self.character_1_name:
-            self.character_1_health = new_health
+            self.character_1_health -= damage_amount
         elif name == self.character_2_name:
-            self.character_2_health = new_health
+            self.character_2_health -= damage_amount
         else:
             raise ValueError(f"Character name {name} not found")
-        print(f"{name} now has {new_health} health")
+        print(f"{name} now has {damage_amount} health")
         if self.character_1_health <= 0:
             print(f"{self.character_1_name} has been defeated!")
             return self.character_2_name
@@ -182,9 +182,9 @@ class DND:
             return self.character_1_name
 
     def user_submit_message(self, message: str, char_name: str):
-        prompt = f"{char_name}: {message} [Rolled a {random.randint(1, 20)}]"  # TODO: remove the random roll or make it visible to the user
+        prompt = f"{char_name}: {message} [HIDDEN SYSTEM MESSAGE: ROLLED A {random.randint(1, 20)}]"  # TODO: remove the random roll or make it visible to the user
         userContent = {
-            "role": "user",
+            "name": char_name,
             "content": message,
             "base64_image": None,
         }
@@ -209,7 +209,7 @@ class DND:
                     continue
         if top_response.content is not None:
             narratorContent = {
-                "role": "narrator",
+                "name": "narrator",
                 "content": top_response.content,
                 "base64_image": None,
             }
@@ -222,46 +222,23 @@ class DND:
                     print(f"Saved image to {f.name}")
             # since it takes a while to generate the image, we'll just add it to the content later
             # any listeners can just repeatedly check the content for new images while this runs
+        else:
+            print("ERROR: No content generated")
 
 
 if __name__ == "__main__":
     dnd = DND()
     dnd.add_user(("Seraphina Stormcaller", "Wizard"))
     dnd.add_user(("Alistair Ironclad", "Warrior"))
+    print("doing intro")
     dnd.start_game()
 
     while dnd.character_1_health > 0 and dnd.character_2_health > 0:
-        print(dnd.content)
+        print("printing content list:")
+        for content in dnd.content:
+            print(f"{content['name']}: {content['content']}")
         dnd.user_submit_message("I cast magic missile", dnd.character_1_name)
-        print(dnd.content)
+        print("printing content list:")
+        for content in dnd.content:
+            print(f"{content['name']}: {content['content']}")
         dnd.user_submit_message("I attack with my sword", dnd.character_2_name)
-    # prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
-
-    # response = dnd.generate_story(prompt)
-    # print(response)
-    # top_response = response.choices[0].message
-
-    # print("Generating image with prompt:")
-    # print(top_response.content)
-
-    # if top_response.content is not None:
-    #     image_response = dnd.generate_image(top_response.content)
-    #     with open(f"{top_response.content[:10]}.jpg", "wb") as f:
-    #         f.write(base64.b64decode(image_response))
-    #         print(f"Saved image to {f.name}")
-    #     # print(image_response)
-
-    # tool_calls = top_response.tool_calls
-    # if tool_calls is not None:
-    #     for tool_call in tool_calls:
-    #         function_name = tool_call.function.name
-    #         function_to_call = dnd.available_functions[function_name]
-    #         function_args = json.loads(tool_call.function.arguments)
-    #         try:
-    #             print(f"Calling function `{function_name}` with args `{function_args}`")
-    #             function_response = function_to_call(**function_args)
-    #         except:  # probably a value error tbh
-    #             print(
-    #                 f"Error calling function `{function_name}` with args `{function_args}`"
-    #             )
-    #             continue
