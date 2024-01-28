@@ -1,5 +1,6 @@
 import base64
 import json
+import random
 import openai
 from openai import OpenAI
 from io import BytesIO
@@ -12,6 +13,9 @@ class DND:
         self.users: List[tuple[str, str]] = []
         self.client: OpenAI
         self.messages = []
+
+        self.content = []  # contains story content + images in base64 in order + with character labels
+
         self.tools = []
 
         self.character_1_health: int
@@ -23,7 +27,7 @@ class DND:
         self.character_2_name: str
 
         self.is_started: bool = False
-    
+
     def get_is_started(self):
         return self.is_started
 
@@ -67,7 +71,7 @@ class DND:
         self.messages = [
             {
                 "role": "system",
-                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate. Keep track of their status with the function `set_character_health`.", 
+                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate. Keep track of their status with the function `set_character_health`.",
             },
         ]
         self.tools = [
@@ -75,7 +79,7 @@ class DND:
                 "type": "function",
                 "function": {
                     "name": "set_character_health",
-                    "description": "Set the health of character `name` to the specified integer value",
+                    "description": "Set the health of character `name` to the specified integer value. Max is 20",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -95,6 +99,13 @@ class DND:
         ]
         self.is_started = True
 
+        prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
+        response = self.generate_story(prompt)
+        top_response = response.choices[0].message
+        if top_response.content is not None:
+            image_response = dnd.generate_image(top_response.content)
+            self.messages[-1]["base64_image"] = image_response
+
     def generate_story(
         self,
         prompt: str,
@@ -111,7 +122,7 @@ class DND:
 
     def generate_image(self, prompt: str):
         # TODO: make sure that the images are stylistically consistent between prompts
-        updatedPrompt = f"Fantasy art style. {prompt}" # todo mess with
+        updatedPrompt = f"Fantasy art style. {prompt}"  # todo mess with
         # print(f"prompting with the prompt '{updatedPrompt}'")
 
         image_response = self.client.images.generate(
@@ -123,6 +134,8 @@ class DND:
             response_format="b64_json",
             n=1,
         )
+        if image_response.data[0].b64_json is None:
+            raise ValueError(f"Image response was empty, prompt was {prompt}")
         return image_response.data[0].b64_json
 
     def generate_image_multitry_content(self, prompt: str, num_tries=2):
@@ -163,6 +176,28 @@ class DND:
             print(f"{self.character_2_name} has been defeated!")
             return self.character_1_name
 
+    def user_submit_message(self, message: str, char_name: str):
+        prompt = f"{char_name}: {message} [Rolled a {random.randint(1, 20)}]"  # TODO: remove the random roll or make it visible to the user
+        userContent = {
+            "role": "user",
+            "content": message,
+            "base64_image": None,
+        }
+        self.content.append(userContent)
+
+        response = self.generate_story(prompt)
+        top_response = response.choices[0].message
+        if top_response.content is not None:
+            narratorContent = {
+                "role": "narrator",
+                "content": top_response.content,
+                "base64_image": None,
+            }
+            self.content.append(narratorContent)
+            narratorContent["base64_image"] = self.generate_image(top_response.content),
+            # since it takes a while to generate the image, we'll just add it to the content later
+            # any listeners can just repeatedly check the content for new images while this runs
+
 
 if __name__ == "__main__":
     dnd = DND()
@@ -170,16 +205,20 @@ if __name__ == "__main__":
     dnd.add_user(("Alistair Ironclad", "Warrior"))
     dnd.start_game()
     prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
+
     response = dnd.generate_story(prompt)
-    print(response)
+    # print(response)
     top_response = response.choices[0].message
 
-    print("Generating image with prompt:")
+    # print("Generating image with prompt:")
     print(top_response.content)
 
     if top_response.content is not None:
         image_response = dnd.generate_image(top_response.content)
-        print(image_response)
+        with open(f"{top_response.content[:10]}.jpg", "wb") as f:
+            f.write(base64.b64decode(image_response))
+            print(f"Saved image to {f.name}")
+        # print(image_response)
 
     tool_calls = top_response.tool_calls
     if tool_calls is not None:
