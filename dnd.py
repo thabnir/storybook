@@ -103,7 +103,7 @@ class DND:
         response = self.generate_story(prompt)
         top_response = response.choices[0].message
         if top_response.content is not None:
-            image_response = dnd.generate_image(top_response.content) # todo maybe move this to make it faster
+            image_response = self.generate_image(top_response.content) # todo maybe move this to make it faster
             intro_content = {
                 "role": "narrator",
                 "content": top_response.content,
@@ -197,7 +197,7 @@ class DND:
         if tool_calls is not None:
             for tool_call in tool_calls:
                 function_name = tool_call.function.name
-                function_to_call = dnd.available_functions[function_name]
+                function_to_call = self.available_functions[function_name]
                 function_args = json.loads(tool_call.function.arguments)
                 try:
                     # print(f"Calling function `{function_name}` with args `{function_args}`")
@@ -229,6 +229,12 @@ if __name__ == "__main__":
     dnd.add_user(("Seraphina Stormcaller", "Wizard"))
     dnd.add_user(("Alistair Ironclad", "Warrior"))
     dnd.start_game()
+
+    while dnd.character_1_health > 0 and dnd.character_2_health > 0:
+        print(dnd.content)
+        dnd.user_submit_message("I cast magic missile", dnd.character_1_name)
+        print(dnd.content)
+        dnd.user_submit_message("I attack with my sword", dnd.character_2_name)
     # prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
 
     # response = dnd.generate_story(prompt)
