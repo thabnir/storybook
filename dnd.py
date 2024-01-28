@@ -63,11 +63,11 @@ class DND:
         self.available_functions = {"set_character_health": self.set_character_health}
         self.character_1_name = self.users[0][0]
         self.character_1_class = self.users[0][1]
-        self.character_1_health = 20
+        self.character_1_health = 100
 
         self.character_2_name = self.users[1][0]
         self.character_2_class = self.users[1][1]
-        self.character_2_health = 20
+        self.character_2_health = 100
         self.messages = [
             {
                 "role": "system",
@@ -79,7 +79,7 @@ class DND:
                 "type": "function",
                 "function": {
                     "name": "set_character_health",
-                    "description": "Set the health of character `name` to the specified integer value. Max is 20",
+                    "description": "Set the health of character `name` to the specified integer value. Max is 100",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -187,6 +187,21 @@ class DND:
 
         response = self.generate_story(prompt)
         top_response = response.choices[0].message
+
+        tool_calls = top_response.tool_calls
+        if tool_calls is not None:
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_to_call = dnd.available_functions[function_name]
+                function_args = json.loads(tool_call.function.arguments)
+                try:
+                    # print(f"Calling function `{function_name}` with args `{function_args}`")
+                    function_to_call(**function_args)
+                except:  # probably a value error tbh
+                    print(
+                        f"Error calling function `{function_name}` with args `{function_args}`"
+                    )
+                    continue
         if top_response.content is not None:
             narratorContent = {
                 "role": "narrator",
@@ -194,7 +209,12 @@ class DND:
                 "base64_image": None,
             }
             self.content.append(narratorContent)
-            narratorContent["base64_image"] = self.generate_image(top_response.content),
+            b64_img = self.generate_image_multitry_content(top_response.content)
+            if b64_img is not None:
+                narratorContent["base64_image"] = b64_img
+                with open(f"{top_response.content[:10]}.jpg", "wb") as f:
+                    f.write(base64.b64decode(b64_img))
+                    print(f"Saved image to {f.name}")
             # since it takes a while to generate the image, we'll just add it to the content later
             # any listeners can just repeatedly check the content for new images while this runs
 
@@ -211,26 +231,26 @@ if __name__ == "__main__":
     top_response = response.choices[0].message
 
     # print("Generating image with prompt:")
-    print(top_response.content)
+    # print(top_response.content)
 
-    if top_response.content is not None:
-        image_response = dnd.generate_image(top_response.content)
-        with open(f"{top_response.content[:10]}.jpg", "wb") as f:
-            f.write(base64.b64decode(image_response))
-            print(f"Saved image to {f.name}")
-        # print(image_response)
+    # if top_response.content is not None:
+    #     image_response = dnd.generate_image(top_response.content)
+    #     with open(f"{top_response.content[:10]}.jpg", "wb") as f:
+    #         f.write(base64.b64decode(image_response))
+    #         print(f"Saved image to {f.name}")
+    #     # print(image_response)
 
-    tool_calls = top_response.tool_calls
-    if tool_calls is not None:
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_to_call = dnd.available_functions[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            try:
-                print(f"Calling function `{function_name}` with args `{function_args}`")
-                function_response = function_to_call(**function_args)
-            except:  # probably a value error tbh
-                print(
-                    f"Error calling function `{function_name}` with args `{function_args}`"
-                )
-                continue
+    # tool_calls = top_response.tool_calls
+    # if tool_calls is not None:
+    #     for tool_call in tool_calls:
+    #         function_name = tool_call.function.name
+    #         function_to_call = dnd.available_functions[function_name]
+    #         function_args = json.loads(tool_call.function.arguments)
+    #         try:
+    #             print(f"Calling function `{function_name}` with args `{function_args}`")
+    #             function_response = function_to_call(**function_args)
+    #         except:  # probably a value error tbh
+    #             print(
+    #                 f"Error calling function `{function_name}` with args `{function_args}`"
+    #             )
+    #             continue
