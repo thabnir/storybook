@@ -1,3 +1,4 @@
+import base64
 import json
 import openai
 from openai import OpenAI
@@ -119,19 +120,10 @@ class DND:
             size="1792x1024",  # mess with this
             quality="hd",  # do HD if it's not too slow
             style="vivid",  # mess with this, vivid or natural. vivid is more AI-looking
-            # response_format="b64_json",
+            response_format="b64_json",
             n=1,
         )
-        # Extract the base64-encoded image data from the response
-        # base64_image_data = image_response["data"][0]["content"]
-
-        # Decode the base64 data into bytes
-        # image_bytes = base64.b64decode(base64_image_data)
-
-        # Create a BytesIO object from the decoded bytes
-        # image_stream = BytesIO(image_bytes)
-
-        return image_response
+        return image_response.data[0].b64_json
 
     def generate_image_multitry_content(self, prompt: str, num_tries=2):
         try:
@@ -187,7 +179,6 @@ if __name__ == "__main__":
 
     if top_response.content is not None:
         image_response = dnd.generate_image(top_response.content)
-
         print(image_response)
 
     tool_calls = top_response.tool_calls
