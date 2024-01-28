@@ -103,8 +103,13 @@ class DND:
         response = self.generate_story(prompt)
         top_response = response.choices[0].message
         if top_response.content is not None:
-            image_response = dnd.generate_image(top_response.content)
-            self.messages[-1]["base64_image"] = image_response
+            image_response = dnd.generate_image(top_response.content) # todo maybe move this to make it faster
+            intro_content = {
+                "role": "narrator",
+                "content": top_response.content,
+                "base64_image": image_response,
+            }
+            self.content.append(intro_content)
 
     def generate_story(
         self,
@@ -224,11 +229,11 @@ if __name__ == "__main__":
     dnd.add_user(("Seraphina Stormcaller", "Wizard"))
     dnd.add_user(("Alistair Ironclad", "Warrior"))
     dnd.start_game()
-    prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
+    # prompt = "The two combatants finally meet. Tension fills the air before their fight begins. Set the stage for the players to make their moves. Stop before the first action."
 
-    response = dnd.generate_story(prompt)
+    # response = dnd.generate_story(prompt)
     # print(response)
-    top_response = response.choices[0].message
+    # top_response = response.choices[0].message
 
     # print("Generating image with prompt:")
     # print(top_response.content)
