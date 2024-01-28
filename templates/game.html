@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script src="/static/js/game.js" defer></script>
+{% endblock %}
+
+{% block body %}
+  <div id="story">
+
+  </div>
+  <div class="row w-50 mx-auto mb-3">
+    <div class="col-sm-6 mb-3 mb-sm-0 pl-0">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">{{ character_1_name }}</h5>
+          <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{ character_1_health }}" aria-valuemin="0" aria-valuemax="100" id="progress-div-1">
+            <div class="progress-bar" style="width: {{ character_1_health }}%" id="progress-bar-div-1">{{ character_1_health }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 pr-0">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">{{ character_2_name }}</h5>
+          <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{ character_2_health }}" aria-valuemin="0" aria-valuemax="100" id="progress-div-2">
+            <div class="progress-bar" style="width: {{ character_2_health }}%" id="progress-bar-div-2">{{ character_2_health }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card w-50 mx-auto">
+    <div class="card-header font-bold text-xl">
+      Next action
+    </div>
+    <div class="card-body">
+      <form id="action-form">
+        <div class="mb-3">
+          <label for="action" class="form-label">What shall you do?</label>
+          <input type="text" class="form-control" id="action" name="action">
+        </div>
+        <button type="submit" class="btn btn-outline-primary">Take action</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

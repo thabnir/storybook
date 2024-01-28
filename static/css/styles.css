@@ -1,0 +1,12 @@
+#main {
+    /* background-image: url("/static/img/_57cd12ec-6fd0-43b3-989a-b3b012514250.jpeg"); */
+    background: linear-gradient(
+        rgba(0, 0, 0, 0.7), 
+        rgba(0, 0, 0, 0.7)
+    ), url("/static/img/_57cd12ec-6fd0-43b3-989a-b3b012514250.jpeg");
+    min-height: 100vh;
+}
+
+nav {
+    background-color: #0B252A;
+}

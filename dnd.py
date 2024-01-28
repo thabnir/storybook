@@ -6,6 +6,8 @@ from openai import OpenAI
 from io import BytesIO
 from typing import List
 
+from dotenv import load_dotenv
+load_dotenv()
 
 class DND:
     def __init__(self):
@@ -27,7 +29,7 @@ class DND:
         self.character_2_name: str
 
         self.is_started: bool = False
-
+    
     def get_is_started(self):
         return self.is_started
 

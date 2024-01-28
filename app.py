@@ -1,53 +1,114 @@
-# Import the required packages
+from functools import wraps
 import os
-import openai
-import requests
-from flask import Flask, render_template, request
+from flask import Flask, render_template, redirect, request, session, url_for
+from flask_session import Session
 
-# Initialize the Flask app
+from dnd import DND
+
 app = Flask(__name__)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
-# Set the OpenAI API key and organization ID
-openai.api_key = os.getenv("OPENAI_API_KEY")
-openai.organization = os.getenv("OPENAI_ORG_ID")
+dnd = DND()
 
-# Define the endpoints for the app
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "username" not in session:
+            return redirect("/")
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/")
 def index():
-    # Render the index.html template
+    if "username" in session:
+        return redirect("/waitingroom")
     return render_template("index.html")
 
-@app.route("/generate", methods=["POST"])
-def generate():
-    # Get the user input from the form
-    user_input = request.form.get("user_input")
+@app.route("/joingame", methods=["POST"])
+def joingame():
+    session.clear()
+    session["username"] = request.form.get("username")
+    session["character_class"] = request.form.get("character_class")
+    dnd.add_user((session["username"], session["character_class"]))
+    return redirect("/waitingroom")
 
-    # Generate a text/story completion using the GPT3.5 API
-    text_response = openai.Completion.create(
-        model="gpt-3.5-turbo",
-        prompt=user_input,
-        max_tokens=100,
-        temperature=0.9,
-        stop="\n"
-    )
+@app.route("/waitingroom")
+@login_required
+def waitingroom():
+    if dnd.get_is_started():
+        return redirect("/game")
+    return render_template("waitingroom.html", name=session["username"])
 
-    # Get the text from the response
-    text = text_response["choices"][0]["text"]
+@app.route("/startgame")
+@login_required
+def startgame():
+    global dnd
+    try:
+        dnd.start_game()
+        return redirect("/game")
+    except ValueError:
+        return redirect("/waitingroom")
 
-    # Generate an image using the Dall-E 3 API
-    image_response = requests.post(
-        "https://api.openai.com/v1/dalle-3/images",
-        headers={
-            "Authorization": f"Bearer {openai.api_key}",
-            "OpenAI-Organization": openai.organization
-        },
-        json={
-            "text": user_input + text
-        }
-    )
+@app.route("/api/waitingroom")
+@login_required
+def waitingroom_status():
+    global dnd
+    if dnd.get_is_started():
+        return "", 200
+    return "", 204
 
-    # Get the image URL from the response
-    image_url = image_response.json()["image_url"]
+@app.route("/game")
+@login_required
+def game():
+    global dnd
+    if not dnd.get_is_started:
+        return redirect("/waitingroom")
+    return render_template("game.html", character_1_name=dnd.character_1_name, character_1_health = dnd.character_1_health, character_2_name=dnd.character_2_name, character_2_health=dnd.character_2_health)
 
-    # Render the generate.html template with the text and image
-    return render_template("generate.html", text=text, image_url=image_url)
+@app.route("/api/getmessages")
+@login_required
+def getmessages():
+    global dnd
+    return dnd.content
+
+@app.route("/api/gethealth")
+@login_required
+def gethealth():
+    global dnd
+    return [dnd.character_1_health, dnd.character_2_health]
+
+@app.route("/api/action", methods=["POST"])
+@login_required
+def action():
+    global dnd
+    if request.form.get("action"):
+        dnd.user_submit_message(request.form.get("action"), session["username"])
+        return ""
+    return "Could not complete action."
+
+@app.route("/jail")
+def jail():
+    session.clear()
+    return render_template("jail.html")
+
+@app.route("/endgame")
+@login_required
+def endgame():
+    global dnd
+    dnd = DND()
+    session.clear()
+    app.config['SECRET_KEY'] = os.urandom(32)
+    return redirect("/")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=6969)

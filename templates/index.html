@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+  <div>
+    <div class="card w-50 mx-auto">
+      <div class="card-header font-bold text-xl">
+        Join Game
+      </div>
+      <div class="card-body">
+        <form method="post" action="/joingame">
+          <div class="mb-3">
+            <label for="username" class="form-label">Pick a name for your character</label>
+            <input type="text" class="form-control" id="username" name="username">
+          </div>
+          <div class="mb-3">
+            <label for="character_class" class="form-label">What is your character's class (e.g. Wizard, Knight, Rogue, Archer)</label>
+            <input type="text" class="form-control" id="character_class" name="character_class">
+          </div>
+          <button type="submit" class="btn btn-outline-primary">Embark Now!</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

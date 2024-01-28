@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<script src="/static/js/waitingroom.js"></script>
+{% endblock %}
+
+{% block body %}
+  <div>
+    <div class="card mx-auto w-50">
+      <h5 class="card-header font-bold text-xl">Welcome to the waiting room</h5>
+      <div class="card-body">
+        <h5 class="card-title">Hello, {{ name }}</h5>
+        <p class="card-text">You are now in the waiting room. Once all players have joined, you can start the game.</p>
+        <a href="/startgame" class="btn btn-primary">Start game</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
