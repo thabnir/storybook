@@ -105,7 +105,7 @@ class DND:
         if top_response.content is not None:
             image_response = self.generate_image(top_response.content) # todo maybe move this to make it faster
             intro_content = {
-                "name": "narrator",
+                "name": "Narrator",
                 "content": top_response.content,
                 "base64_image": image_response,
             }
@@ -209,7 +209,7 @@ class DND:
                     continue
         if top_response.content is not None:
             narratorContent = {
-                "name": "narrator",
+                "name": "Narrator",
                 "content": top_response.content,
                 "base64_image": None,
             }
