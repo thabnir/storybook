@@ -1,6 +1,7 @@
 import json
 import openai
 from openai import OpenAI
+from io import BytesIO
 from typing import List
 
 
@@ -21,6 +22,12 @@ class DND:
         self.character_2_name: str
 
         self.is_started: bool = False
+    
+    def get_is_started(self):
+        return self.is_started
+
+    def set_is_started(self, is_started: bool):
+        self.is_started = is_started
 
     def add_user(self, user: tuple[str, str]):
         self.users.append(user)
@@ -59,7 +66,7 @@ class DND:
         self.messages = [
             {
                 "role": "system",
-                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate.", 
+                "content": f"You are a DND-style narrator and arbitrator over a turn-based player-versus-player game. The combatants are {self.character_1_name}, a {self.character_1_class} and {self.character_2_name}, a {self.character_2_class}. Give a dramatic, turn-by-turn visual narration of the course of events as their actions dictate. Keep track of their status with the function `set_character_health`.", 
             },
         ]
         self.tools = [
@@ -102,17 +109,28 @@ class DND:
         return response
 
     def generate_image(self, prompt: str):
-        # TODO: make sure that the images are stylistically consistent
+        # TODO: make sure that the images are stylistically consistent between prompts
         updatedPrompt = f"Fantasy art style. {prompt}" # todo mess with
-        print(f"prompting with the prompt '{updatedPrompt}'")
+        # print(f"prompting with the prompt '{updatedPrompt}'")
+
         image_response = self.client.images.generate(
             model="dall-e-3",
             prompt=updatedPrompt,
             size="1792x1024",  # mess with this
             quality="hd",  # do HD if it's not too slow
             style="vivid",  # mess with this, vivid or natural. vivid is more AI-looking
+            # response_format="b64_json",
             n=1,
         )
+        # Extract the base64-encoded image data from the response
+        # base64_image_data = image_response["data"][0]["content"]
+
+        # Decode the base64 data into bytes
+        # image_bytes = base64.b64decode(base64_image_data)
+
+        # Create a BytesIO object from the decoded bytes
+        # image_stream = BytesIO(image_bytes)
+
         return image_response
 
     def generate_image_multitry_content(self, prompt: str, num_tries=2):
@@ -145,12 +163,13 @@ class DND:
             self.character_2_health = new_health
         else:
             raise ValueError(f"Character name {name} not found")
-            # TODO: test this to see if it actually works
         print(f"{name} now has {new_health} health")
         if self.character_1_health <= 0:
             print(f"{self.character_1_name} has been defeated!")
+            return self.character_2_name
         elif self.character_2_health <= 0:
             print(f"{self.character_2_name} has been defeated!")
+            return self.character_1_name
 
 
 if __name__ == "__main__":
