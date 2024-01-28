@@ -60,7 +60,7 @@ class DND:
             # alternatively, we could just ignore the extra users
         self.client = OpenAI()
 
-        self.available_functions = {"set_character_health": self.deal_damage}
+        self.available_functions = {"deal_damage": self.deal_damage}
         self.character_1_name = self.users[0][0]
         self.character_1_class = self.users[0][1]
         self.character_1_health = 100
@@ -134,7 +134,7 @@ class DND:
             model="dall-e-3",
             prompt=updatedPrompt,
             size="1792x1024",  # mess with this
-            quality="hd",  # do HD if it's not too slow
+            quality="standard",  # do HD if it's not too slow
             style="vivid",  # mess with this, vivid or natural. vivid is more AI-looking
             response_format="b64_json",
             n=1,
@@ -234,11 +234,10 @@ if __name__ == "__main__":
     dnd.start_game()
 
     while dnd.character_1_health > 0 and dnd.character_2_health > 0:
-        print("printing content list:")
-        for content in dnd.content:
-            print(f"{content['name']}: {content['content']}")
-        dnd.user_submit_message("I cast magic missile", dnd.character_1_name)
-        print("printing content list:")
-        for content in dnd.content:
-            print(f"{content['name']}: {content['content']}")
-        dnd.user_submit_message("I attack with my sword", dnd.character_2_name)
+        print(f"{dnd.content[-1]['name']}: {dnd.content[-1]['content']}")
+        user_1_input = input(f"{dnd.character_1_name}: ")
+        dnd.user_submit_message(user_1_input, dnd.character_1_name)
+
+        print(f"{dnd.content[-1]['name']}: {dnd.content[-1]['content']}")
+        user_2_input = input(f"{dnd.character_2_name}: ")
+        dnd.user_submit_message(user_2_input, dnd.character_2_name)
