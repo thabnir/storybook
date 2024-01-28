@@ -73,7 +73,7 @@ def game():
     global dnd
     if not dnd.get_is_started:
         return redirect("/waitingroom")
-    return render_template("game.html", character_1_name=dnd.character_1_name, character_1_health = dnd.character_1_health, character_2_name=dnd.character_2_name, character_2_health=dnd.character_2_health)
+    return render_template("game.html", character_1_name=dnd.character_1_name, character_1_health = dnd.character_1_health, character_2_name=dnd.character_2_name, character_2_health=dnd.character_2_health, is_first=(session["username"] == dnd.character_1_name))
 
 @app.route("/api/getmessages")
 @login_required

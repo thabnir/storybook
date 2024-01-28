@@ -60,8 +60,6 @@ pollMessages(0);
 
 const pollHealth = () => {
   fetch("/api/gethealth").then((e) => e.json()).then((e) => {
-    console.log(e);
-
     document.getElementById("progress-div-1").ariaValueNow = `${e[0]}`;
     document.getElementById("progress-bar-div-1").style.width = `${e[0]}%`;
     document.getElementById("progress-bar-div-1").innerHTML = `${e[0]}%`;

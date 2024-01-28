@@ -12,7 +12,7 @@
     <div class="col-sm-6 mb-3 mb-sm-0 pl-0">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">{{ character_1_name }}</h5>
+          <h5 class="card-title">{{ character_1_name }}{% if is_first %} (You){% endif %}</h5>
           <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{ character_1_health }}" aria-valuemin="0" aria-valuemax="100" id="progress-div-1">
             <div class="progress-bar" style="width: {{ character_1_health }}%" id="progress-bar-div-1">{{ character_1_health }}%</div>
           </div>
@@ -22,7 +22,7 @@
     <div class="col-sm-6 pr-0">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">{{ character_2_name }}</h5>
+          <h5 class="card-title">{{ character_2_name }}{% if not is_first %} (You){% endif %}</h5>
           <div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="{{ character_2_health }}" aria-valuemin="0" aria-valuemax="100" id="progress-div-2">
             <div class="progress-bar" style="width: {{ character_2_health }}%" id="progress-bar-div-2">{{ character_2_health }}%</div>
           </div>
