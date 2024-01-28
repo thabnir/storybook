@@ -208,16 +208,16 @@ class DND:
                     )
                     continue
         if top_response.content is not None:
+            b64_img = self.generate_image_multitry_content(top_response.content)
             narratorContent = {
                 "name": "Narrator",
                 "content": top_response.content,
-                "base64_image": None,
+                "base64_image": b64_img,
             }
             self.content.append(narratorContent)
-            b64_img = self.generate_image_multitry_content(top_response.content)
             if b64_img is not None:
-                narratorContent["base64_image"] = b64_img
-                with open(f"{top_response.content[:10]}.jpg", "wb") as f:
+                # narratorContent["base64_image"] = b64_img
+                with open(f"{top_response.content[:20]}.jpg", "wb") as f:
                     f.write(base64.b64decode(b64_img))
                     print(f"Saved image to {f.name}")
             # since it takes a while to generate the image, we'll just add it to the content later
